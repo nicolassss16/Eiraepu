@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página de Pruebas Eirae</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px; /* Ancho aumentado */
+            margin: 0 auto;
+            display: grid;
+            /* ¡CAMBIO! 3 columnas */
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+        }
+        h1 { color: #0056b3; }
+        .form-container {
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        h2 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box; /* Importante */
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            width: 100%;
+        }
+        button:hover { background-color: #0056b3; }
+        button.create-btn { background-color: #28a745; } /* Botón verde */
+        button.create-btn:hover { background-color: #218838; }
+
+        #status-message {
+            max-width: 1150px; /* Ancho del container */
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 5px;
+            font-weight: 600;
+            display: none; 
+        }
+        #status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+        #status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div style="max-width: 1200px; margin: 0 auto;">
+        <h1>Panel de Pruebas Eirae</h1>
+        <p>Usa estos formularios para inyectar datos de prueba en el sistema.</p>
+        <p><a href="/dashboard" target="_blank">Abrir el Dashboard (en otra pestaña)</a></p>
+    </div>
+
+    <div class="container">
+        <div class="form-container">
+            <h2>1. Inyectar Lectura de Sensor</h2>
+            <form id="form-sensor">
+                <div class="form-group">
+                    <label for="sensor_nombre">Nombre del Sensor</label>
+                    <select id="sensor_nombre" required>
+                        <option value="">Cargando sensores...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="temperatura">Temperatura (°C)</label>
+                    <input type="number" id="temperatura" step="0.1" value="25.0" required>
+                </div>
+                <div class="form-group">
+                    <label for="humedad">Humedad (%)</label>
+                    <input type="number" id="humedad" step="0.1" value="60.0" required>
+                </div>
+                <div class="form-group">
+                    <label for="particulas_pm25">Partículas PM2.5 (µg/m³)</label>
+                    <input type="number" id="particulas_pm25" step="0.1" value="12.0" required>
+                </div>
+                <button type="submit">Inyectar Lectura</button>
+            </form>
+        </div>
+
+        <div class="form-container">
+            <h2>2. Inyectar Reporte Comunitario</h2>
+            <form id="form-reporte">
+                <div class="form-group">
+                    <label for="lat">Latitud</label>
+                    <input type="number" id="lat" step="0.0001" value="-34.6050" required>
+                </div>
+                <div class="form-group">
+                    <label for="lon">Longitud</label>
+                    <input type="number" id="lon" step="0.0001" value="-58.3850" required>
+                </div>
+                <div class="form-group">
+                    <label for="tipo_sintoma">Tipo de Síntoma</label>
+                    <select id="tipo_sintoma" required>
+                        <option value="respiratorio">Respiratorio</option>
+                        <option value="dengue">Dengue (vector)</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="comentario">Comentario (opcional)</label>
+                    <textarea id="comentario" rows="2"></textarea>
+                </div>
+                <button type="submit">Inyectar Reporte</button>
+            </form>
+        </div>
+        
+        <div class="form-container">
+            <h2>3. Agregar Nuevo Sensor</h2>
+            <form id="form-nuevo-sensor">
+                <div class="form-group">
+                    <label for="nuevo_nombre">Nombre (ID Único)</label>
+                    <input type="text" id="nuevo_nombre" placeholder="Ej: Sensor-Parque-Saavedra" required>
+                </div>
+                <div class="form-group">
+                    <label for="nuevo_lat">Latitud</albel>
+                    <input type="number" id="nuevo_lat" step="0.0001" value="-34.5500" required>
+                </div>
+                <div class="form-group">
+                    <label for="nuevo_lon">Longitud</albel>
+                    <input type="number" id="nuevo_lon" step="0.0001" value="-58.4500" required>
+                </div>
+                <div class="form-group">
+                    <label>(Esto agregará el sensor a la base de datos)</label>
+                </div>
+                <button type="submit" class="create-btn">Agregar Sensor</button>
+            </form>
+        </div>
+
+    </div>
+    
+    <div id="status-message"></div>
+
+
+    <script>
+        const statusMsg = document.getElementById('status-message');
+        const sensorSelect = document.getElementById('sensor_nombre');
+
+        // --- Al cargar la página, llenamos la lista de sensores ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Usamos la misma API del dashboard
+                const response = await fetch('/api/map_data');
+                const sensores = await response.json();
+                
+                sensorSelect.innerHTML = ''; // Limpiamos "cargando"
+                sensores.forEach(sensor => {
+                    const option = document.createElement('option');
+                    option.value = sensor.nombre;
+                    option.textContent = sensor.nombre;
+                    sensorSelect.appendChild(option);
+                });
+            } catch (error) {
+                sensorSelect.innerHTML = '<option value="">Error al cargar sensores</option>';
+            }
+        });
+
+        // --- Manejador para el Formulario de Sensores ---
+        document.getElementById('form-sensor').addEventListener('submit', async (e) => {
+            e.preventDefault(); 
+            const data = {
+                sensor_nombre: sensorSelect.value,
+                temperatura: parseFloat(document.getElementById('temperatura').value),
+                humedad: parseFloat(document.getElementById('humedad').value),
+                particulas_pm25: parseFloat(document.getElementById('particulas_pm25').value)
+            };
+            await handleSubmit('/api/ingest/sensor', data, 'Lectura de sensor');
+        });
+
+        // --- Manejador para el Formulario de Reportes ---
+        document.getElementById('form-reporte').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                lat: parseFloat(document.getElementById('lat').value),
+                lon: parseFloat(document.getElementById('lon').value),
+                tipo_sintoma: document.getElementById('tipo_sintoma').value,
+                comentario: document.getElementById('comentario').value
+            };
+            await handleSubmit('/api/ingest/report', data, 'Reporte comunitario');
+        });
+
+        // --- ¡NUEVO! Manejador para el Formulario de Nuevo Sensor ---
+        document.getElementById('form-nuevo-sensor').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                nombre: document.getElementById('nuevo_nombre').value,
+                lat: parseFloat(document.getElementById('nuevo_lat').value),
+                lon: parseFloat(document.getElementById('nuevo_lon').value)
+            };
+            
+            // Llama a la nueva API
+            const success = await handleSubmit('/api/sensor/create', data, 'Nuevo sensor');
+            
+            // Si fue exitoso, actualiza la lista desplegable
+            if (success) {
+                const option = document.createElement('option');
+                option.value = data.nombre;
+                option.textContent = data.nombre;
+                sensorSelect.appendChild(option);
+                sensorSelect.value = data.nombre; // Lo seleccionamos
+                // Limpiamos el formulario de creación
+                e.target.reset();
+            }
+        });
+
+        // --- Función genérica para enviar los datos ---
+        async function handleSubmit(url, data, tipo) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    // Si la API devuelve un error (ej: "sensor ya existe")
+                    throw new Error(result.detail || 'Error desconocido');
+                }
+                
+                statusMsg.className = 'success';
+                statusMsg.innerHTML = `¡Éxito! ${tipo} "${data.nombre || ''}" fue procesado. <strong>Recarga el dashboard para ver el cambio.</strong>`;
+                return true; // Devuelve éxito
+
+            } catch (error) {
+                statusMsg.className = 'error';
+                statusMsg.innerHTML = `Error al procesar ${tipo}: ${error.message}`;
+                console.error(error);
+                return false; // Devuelve fracaso
+            }
+        }
+    </script>
+</body>
+</html>

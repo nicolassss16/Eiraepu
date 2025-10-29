@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Eirae</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="/static/css/style.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Estilo para los marcadores de reportes (un pin simple) */
+        .report-marker-icon {
+            background-color: #8338ec; /* Color violeta */
+            border: 2px solid #ffffff;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="dashboard-grid">
+
+        <aside class="sidebar">
+            <h2>Sensores (Zonas)</h2>
+            <ul id="sensor-list">
+                <li>Cargando sensores...</li>
+            </ul>
+            
+            <div style="padding: 15px 10px; border-top: 1px solid #eee; margin-top: 20px;">
+                <input type="checkbox" id="toggle-reports" onchange="toggleReportes(this.checked)" checked>
+                <label for="toggle-reports">Mostrar Reportes</label>
+            </div>
+
+            <a href="/">&larr; Volver a la página principal</a>
+        </aside>
+
+        <main class="main-content">
+            <h1>Dashboard de Monitoreo Eirae</h1>
+
+            <section class="stat-cards" id="stat-cards-container">
+                <div class="stat-card">
+                    <h3>Sensores Activos</h3>
+                    <div class="value" id="kpi-sensores-activos">...</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Riesgo General</h3>
+                    <div class="value" id="kpi-riesgo-general">...</div>
+                </div>
+                <div class="stat-card">
+                    <h3>Calidad de Aire (Prom.)</h3>
+                    <div class="value" id="kpi-calidad-aire">...</div>
+                </div>
+            </section>
+
+            <section class="map-info-grid">
+                
+                <div id="mapaEirae"></div>
+                
+                <div id="info-panel">
+                    <h3>Detalles de la Zona</h3>
+                    <div id="info-panel-content">
+                        <p>Selecciona un sensor de la lista o el mapa para ver sus detalles.</p>
+                    </div>
+                    
+                    <div id="chart-container" style="margin-top: 20px; display: none;">
+                        <h4>Historial (Últimas 24h)</h4>
+                        <canvas id="sensorChart"></canvas>
+                    </div>
+
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // --- Variables Globales ---
+        let map;
+        let allSensorData = [];
+        let markers = {};
+        
+        // ¡NUEVO!
+        let sensorChartInstance = null; // Para guardar la instancia del gráfico
+        let reportMarkersLayer = L.layerGroup(); // Capa para los reportes
+
+        // --- Función Principal (Se ejecuta al cargar) ---
+        document.addEventListener("DOMContentLoaded", function() {
+            inicializarMapa();
+            cargarDatosDeRiesgo();
+            cargarYMostrarReportes(); // ¡NUEVO!
+        });
+
+        // --- 1. Inicializa el Mapa de Leaflet ---
+        function inicializarMapa() {
+            map = L.map('mapaEirae').setView([-34.60, -58.38], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            
+            // Añadimos la capa de reportes al mapa
+            reportMarkersLayer.addTo(map);
+        }
+
+        // --- 2. Carga los datos de los Sensores ---
+        async function cargarDatosDeRiesgo() {
+            try {
+                const response = await fetch('/api/map_data');
+                if (!response.ok) throw new Error('Error al cargar datos de la API');
+                
+                allSensorData = await response.json();
+                actualizarDashboardUI();
+                
+            } catch (error) {
+                console.error("Error fatal:", error);
+                document.getElementById('sensor-list').innerHTML = `<li>Error al cargar.</li>`;
+            }
+        }
+
+        // --- 3. ¡NUEVO! Carga los reportes comunitarios ---
+        async function cargarYMostrarReportes() {
+            try {
+                const response = await fetch('/api/reports');
+                if (!response.ok) throw new Error('Error al cargar reportes');
+                
+                const reportes = await response.json();
+                
+                reportMarkersLayer.clearLayers(); // Limpiamos reportes anteriores
+                
+                // Usamos un icono HTML simple
+                const reportIcon = L.divIcon({
+                    className: 'report-marker-icon',
+                    iconSize: [12, 12]
+                });
+
+                reportes.forEach(reporte => {
+                    L.marker([reporte.lat, reporte.lon], { icon: reportIcon })
+                        .addTo(reportMarkersLayer)
+                        .bindPopup(`<b>Reporte Comunitario</b><br>
+                                    Síntoma: ${reporte.tipo_sintoma}<br>
+                                    Hora: ${new Date(reporte.timestamp).toLocaleString()}<br>
+                                    Comentario: ${reporte.comentario || 'N/A'}`);
+                });
+
+            } catch (error) {
+                console.error("Error al cargar reportes:", error);
+            }
+        }
+        
+        // --- ¡NUEVO! Función para mostrar/ocultar reportes ---
+        function toggleReportes(mostrar) {
+            if (mostrar) {
+                map.addLayer(reportMarkersLayer);
+            } else {
+                map.removeLayer(reportMarkersLayer);
+            }
+        }
+
+
+        // --- 4. Actualiza todos los componentes de la UI ---
+        function actualizarDashboardUI() {
+            // (Estas funciones son de la versión anterior)
+            poblarListaSensores(allSensorData);
+            pintarMarcadoresEnMapa(allSensorData);
+            actualizarTarjetasKPI(allSensorData);
+        }
+
+        // (Funciones 5 y 6 sin cambios)
+        function poblarListaSensores(data) {
+            const listElement = document.getElementById('sensor-list');
+            listElement.innerHTML = '';
+            data.forEach(sensor => {
+                const li = document.createElement('li');
+                li.textContent = sensor.nombre;
+                li.dataset.sensorId = sensor.id;
+                li.addEventListener('click', () => { mostrarDetalleSensor(sensor.id); });
+                listElement.appendChild(li);
+            });
+        }
+        function pintarMarcadoresEnMapa(data) {
+            Object.values(markers).forEach(marker => marker.remove());
+            markers = {};
+            data.forEach(sensor => {
+                let colorDelRiesgo = 'gray';
+                if (sensor.riesgo_epidemiologico === 'ALTO') colorDelRiesgo = 'red';
+                else if (sensor.riesgo_epidemiologico === 'MEDIO') colorDelRiesgo = 'orange';
+                else if (sensor.riesgo_epidemiologico === 'BAJO') colorDelRiesgo = 'green';
+                const marker = L.circle([sensor.lat, sensor.lon], {
+                    color: colorDelRiesgo, fillColor: colorDelRiesgo, fillOpacity: 0.6, radius: 600 
+                }).addTo(map);
+                markers[sensor.id] = marker;
+                marker.on('click', () => { mostrarDetalleSensor(sensor.id); });
+            });
+        }
+        function actualizarTarjetasKPI(data) {
+            document.getElementById('kpi-sensores-activos').textContent = data.length;
+            let riesgoAltoCount = data.filter(s => s.riesgo_epidemiologico === 'ALTO').length;
+            let calidadMalaCount = data.filter(s => s.calidad_aire === 'MALA').length;
+            const kpiRiesgo = document.getElementById('kpi-riesgo-general');
+            if (riesgoAltoCount > 0) {
+                kpiRiesgo.textContent = 'ALTO'; kpiRiesgo.className = 'value riesgo-ALTO';
+            } else {
+                kpiRiesgo.textContent = 'BAJO'; kpiRiesgo.className = 'value riesgo-BAJO';
+            }
+            const kpiCalidad = document.getElementById('kpi-calidad-aire');
+             if (calidadMalaCount > 0) {
+                kpiCalidad.textContent = 'MALA'; kpiCalidad.className = 'value riesgo-ALTO';
+            } else {
+                kpiCalidad.textContent = 'BUENA'; kpiCalidad.className = 'value riesgo-BAJO';
+            }
+        }
+
+
+        // --- 7. (¡MUY ACTUALIZADA!) Muestra detalles Y EL GRÁFICO ---
+        async function mostrarDetalleSensor(sensorId) {
+            const sensor = allSensorData.find(s => s.id === sensorId);
+            if (!sensor) return;
+
+            const infoPanel = document.getElementById('info-panel');
+            const infoContent = document.getElementById('info-panel-content');
+            const chartContainer = document.getElementById('chart-container');
+
+            // Resaltar en lista
+            document.querySelectorAll('#sensor-list li').forEach(li => {
+                li.classList.toggle('active', li.dataset.sensorId == sensor.id);
+            });
+
+            // Centrar mapa
+            map.setView([sensor.lat, sensor.lon], 14);
+
+            // Rellenar panel de información (igual que antes)
+            let html = `<h3>${sensor.nombre}</h3><ul>`;
+            html += `<li><strong>Riesgo Epid.</strong> <span>${sensor.riesgo_epidemiologico}</span></li>`;
+            html += `<li><strong>Calidad de Aire</strong> <span>${sensor.calidad_aire}</span></li>`;
+            if (sensor.clima_actual && sensor.clima_actual.temperature_2m) {
+                html += `<li><strong>Clima Actual</strong> <span>${sensor.clima_actual.temperature_2m} °C</span></li>`;
+                html += `<li><strong>Viento Actual</strong> <span>${sensor.clima_actual.wind_speed_10m} km/h</span></li>`;
+            }
+            if (sensor.ultima_lectura) {
+                html += `<hr><li><strong>Última Lectura:</strong></li>`;
+                html += `<li>&nbsp;&nbsp; Temperatura</li> <span>${sensor.ultima_lectura.temp} °C</span>`;
+                html += `<li>&nbsp;&nbsp; Humedad</li> <span>${sensor.ultima_lectura.hum} %</span>`;
+                html += `<li>&nbsp;&nbsp; Partículas PM2.5</li> <span>${sensor.ultima_lectura.pm25} µg/m³</span>`;
+                html += `<li>&nbsp;&nbsp; Hora</li> <span>${new Date(sensor.ultima_lectura.hora).toLocaleTimeString()}</span>`;
+            } else {
+                 html += `<li><strong>Última Lectura:</strong> <span>Sin datos</span></li>`;
+            }
+            html += `</ul>`;
+            infoContent.innerHTML = html;
+            infoPanel.style.display = 'block';
+
+            // --- ¡NUEVO! Cargar y renderizar el gráfico ---
+            try {
+                const response = await fetch(`/api/sensor/${sensor.id}/history`);
+                if (!response.ok) throw new Error('No se pudo cargar el historial');
+                
+                const historyData = await response.json();
+                
+                if (historyData.length > 0) {
+                    renderizarGrafico(historyData);
+                    chartContainer.style.display = 'block';
+                } else {
+                    chartContainer.style.display = 'none';
+                }
+            } catch (error) {
+                console.error("Error al cargar gráfico:", error);
+                chartContainer.style.display = 'none';
+            }
+        }
+
+        // --- 8. ¡NUEVO! Función para dibujar el gráfico ---
+        function renderizarGrafico(data) {
+            const ctx = document.getElementById('sensorChart').getContext('2d');
+            
+            // Si ya existe un gráfico, lo destruimos para crear uno nuevo
+            if (sensorChartInstance) {
+                sensorChartInstance.destroy();
+            }
+
+            // Procesamos los datos para Chart.js
+            const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }));
+            const tempData = data.map(d => d.temperatura);
+            const humData = data.map(d => d.humedad);
+            const pm25Data = data.map(d => d.particulas_pm25);
+
+            sensorChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Temp (°C)',
+                            data: tempData,
+                            borderColor: '#d90429', // Rojo
+                            backgroundColor: '#d9042940',
+                            yAxisID: 'y', // Eje Y izquierdo
+                        },
+                        {
+                            label: 'Humedad (%)',
+                            data: humData,
+                            borderColor: '#0070f3', // Azul
+                            backgroundColor: '#0070f340',
+                            yAxisID: 'y', // Eje Y izquierdo
+                        },
+                        {
+                            label: 'PM2.5 (µg/m³)',
+                            data: pm25Data,
+                            borderColor: '#f77f00', // Naranja
+                            backgroundColor: '#f77f0040',
+                            yAxisID: 'y1', // Eje Y derecho
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { // Eje Y izquierdo (Temp y Humedad)
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: '°C / %' }
+                        },
+                        y1: { // Eje Y derecho (PM2.5)
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'µg/m³' },
+                            grid: { drawOnChartArea: false } // No superponer grillas
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
