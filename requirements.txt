@@ -3,4 +3,5 @@ uvicorn[standard]
 pydantic
 jinja2
 sqlalchemy
+gunicorn
 httpx
