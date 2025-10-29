@@ -1,0 +1,168 @@
+/* --- Estilos Globales --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f7f6; /* Un fondo más suave */
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+h1, h2, h3 {
+    color: #004a99;
+    margin-top: 0;
+}
+
+a {
+    color: #0070f3;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+/* --- Layout del Dashboard --- */
+.dashboard-grid {
+    display: grid;
+    /* Define 2 columnas: un sidebar de 280px y el contenido principal */
+    grid-template-columns: 280px 1fr; 
+    grid-template-areas: "sidebar main";
+    width: 100%;
+    flex-grow: 1; /* Ocupa el alto disponible */
+}
+
+/* --- Sidebar (Lista de Sensores) --- */
+.sidebar {
+    grid-area: sidebar;
+    background-color: #ffffff;
+    padding: 20px;
+    border-right: 1px solid #e0e0e0;
+    overflow-y: auto; /* Para scroll si hay muchos sensores */
+}
+
+.sidebar h2 {
+    font-size: 1.2rem;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+#sensor-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#sensor-list li {
+    padding: 15px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    border: 1px solid transparent;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+#sensor-list li:hover {
+    background-color: #f9f9f9;
+}
+
+#sensor-list li.active {
+    background-color: #e6f7ff;
+    border-color: #0070f3;
+    font-weight: 600;
+    color: #004a99;
+}
+
+/* --- Contenido Principal --- */
+.main-content {
+    grid-area: main;
+    padding: 25px;
+    overflow-y: auto; /* Permite scroll en el panel principal */
+}
+
+.main-content h1 {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+
+/* --- Tarjetas de Estado (KPIs) --- */
+.stat-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.stat-card {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.stat-card h3 {
+    font-size: 0.9rem;
+    color: #555;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.stat-card .value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #004a99;
+}
+.stat-card .value.riesgo-ALTO { color: #d90429; }
+.stat-card .value.riesgo-MEDIO { color: #f77f00; }
+.stat-card .value.riesgo-BAJO { color: #2a9d8f; }
+
+
+/* --- Mapa y Panel de Información --- */
+.map-info-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* Mapa 2/3, Info 1/3 */
+    gap: 20px;
+}
+
+#mapaEirae { 
+    height: 450px; 
+    width: 100%; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+#info-panel {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    /* Oculto por defecto, se muestra con JS */
+    display: none; 
+}
+
+#info-panel h3 {
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+#info-panel ul {
+    list-style: none;
+    padding: 0;
+}
+
+#info-panel ul li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #f9f9f9;
+}
+#info-panel ul li strong {
+    color: #333;
+}
+#info-panel ul li span {
+    color: #555;
+    font-weight: 500;
+}
